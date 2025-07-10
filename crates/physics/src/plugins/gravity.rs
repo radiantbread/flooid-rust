@@ -1,6 +1,5 @@
 use crate::plugins::particle::ParticleUpdatesSet;
 use crate::prelude::*;
-use std::f32::consts::PI;
 
 pub fn gravity_plugin(app: &mut App) {
     app.init_resource::<Gravity>()
@@ -21,7 +20,7 @@ fn apply_gravity(time: Res<Time>, gravity: Res<Gravity>, query: Query<&mut Veloc
 }
 
 fn rotate_gravity(time: Res<Time>, mut gravity: ResMut<Gravity>) {
-    gravity.direction -= 2.0 * PI / 360.0 * time.delta_secs() * 0.0;
+    gravity.direction -= 100.0 * PI / 360.0 * time.delta_secs();
     if gravity.direction >= 2.0 * PI {
         gravity.direction = 0.0;
     }

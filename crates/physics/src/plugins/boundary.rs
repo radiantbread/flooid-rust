@@ -2,13 +2,15 @@ use crate::plugins::particle::ParticleUpdatesSet;
 use crate::prelude::*;
 
 pub fn boundary_plugin(app: &mut App) {
-    app.add_systems(Startup, spawn_boundary_box).add_systems(
-        Update,
-        (
-            handle_out_of_bounds.before(ParticleUpdatesSet),
-            draw_boundary_box,
-        ),
-    );
+    app.add_systems(Startup, spawn_boundary_box)
+        .add_systems(
+            Update,
+            (
+                handle_out_of_bounds.before(ParticleUpdatesSet),
+                draw_boundary_box,
+            ),
+        )
+        .init_resource::<BoundaryBoxDefaults>();
 }
 
 /* -- Update -- */
@@ -16,9 +18,10 @@ pub fn boundary_plugin(app: &mut App) {
 fn handle_out_of_bounds(
     boundary_box_query: Single<&Transform, With<BoundaryBox>>,
     particle_query: Query<(&mut Transform, &mut Velocity), Without<BoundaryBox>>,
+    defaults: Res<BoundaryBoxDefaults>,
     // collision_event: EventWriter<OutOfBoundsEvent>
 ) {
-    let damping_factor = 0.80;
+    let damping_factor = defaults.damping;
     let box_transform = boundary_box_query.into_inner();
     for (mut particle_transform, mut velocity) in particle_query {
         let (box_width, box_height) = (box_transform.scale.x, box_transform.scale.y);
@@ -44,14 +47,17 @@ fn handle_out_of_bounds(
 }
 
 // Visual
-fn draw_boundary_box(mut gizmos: Gizmos) {
-    let color = Color::linear_rgb(1.0, 0.15, 0.1);
-    gizmos.rect_2d(Isometry2d::IDENTITY, vec2(1000.0, 600.0), color);
+fn draw_boundary_box(mut gizmos: Gizmos, defaults: Res<BoundaryBoxDefaults>) {
+    gizmos.rect_2d(Isometry2d::from_translation(defaults.center.xy()), defaults.size, defaults.color);
 }
 
 /* -- Startup -- */
-fn spawn_boundary_box(mut commands: Commands) {
-    let box_transform = Transform::IDENTITY.with_scale(vec3(1000.0, 600.0, 0.0));
+fn spawn_boundary_box(mut commands: Commands, defaults: Res<BoundaryBoxDefaults>) {
+    let box_transform = Transform {
+        translation: defaults.center,
+        rotation: Quat::default(),
+        scale: defaults.size.extend(0.0),
+    };
 
     commands.spawn(BoundaryBoxBundle::new(box_transform));
 }
